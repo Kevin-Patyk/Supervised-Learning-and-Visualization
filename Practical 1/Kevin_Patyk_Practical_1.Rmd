@@ -1,0 +1,307 @@
+---
+title: "Practical 1"
+author: "Kevin Patyk"
+date: "9/23/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+# Loading the required packages
+```{r message=FALSE, warning=FALSE}
+library(ISLR)
+library(magrittr)
+library(tidyverse)
+library(haven)
+library(readxl)
+library(DT)
+```
+
+-----
+
+# Data types
+
+**1: Run the following code in R and inspect their data types using the `class()` function. Try to guess beforehand what their types will be!**
+```{r}
+#running the code
+object_1 <- 1:5
+object_2 <- 1L:5L
+object_3 <- "-123.456"
+object_4 <- as.numeric(object_2)
+object_5 <- letters[object_1]
+object_6 <- as.factor(rep(object_5, 2))
+object_7 <- c(1, 2, 3, "4", "5", "6")
+
+#checking the data types
+sapply(X = mget(ls())[-8], FUN = class)
+```
+
+**2: Convert object_7 back to a vector of numbers using the `as.numeric()` function.**
+```{r}
+object_7 <- as.numeric(object_7)
+class(object_7)
+```
+
+-----
+
+# Lists and data frames
+
+**3: Make a list called objects containing object 1 to 7 using the `list()` function.**
+```{r results='hide'}
+object_list <- mget(ls())[-9]
+#or
+object_list_alt <- list(object_1, object_2, object_3, object_4, object_5, object_6, object_7)
+
+#accessing contents of a list
+object_list$object_1
+object_list$object_1[1]
+#or
+object_list[[1]]
+object_list[[1]][1]
+```
+
+**4: Make a data frame out of `object_1`, `object_2`, and `object_5` using the `data.frame()` function.**
+```{r results='hide'}
+#making the data frame
+object_df <- data.frame(object_1, object_2, object_5)
+
+#accessing contents of a data frame
+object_df$object_1 #entire first column
+#or
+object_df[, 1] #entire first column
+
+object_df[1, ] #entire first row
+object_df[1, 3] #first row, third column
+```
+
+**5: Useful functions for determining the size of a data frame are `ncol()` and `nrow()`. Try them out!**
+```{r results='hide'}
+ncol(object_df) #3 columns/variables
+nrow(object_df) #5 rows/observations
+```
+
+-----
+
+# Loading, viewing, and summarising data
+
+**6: Use the function `read_csv()` to import the file “data/googleplaystore.csv” and store it in a variable called `apps`.**
+```{r warning=FALSE, message=FALSE}
+#tidyverse
+df <- read_csv(file = "googleplaystore.csv")
+#base R
+df_alt <- read.csv(file = "googleplaystore.csv")
+```
+
+**7: Did any column get a variable type you did not expect?**
+
+Well, I guess I maybe expected the Size and Price variables to be numeric, but it makes sense they are not because they include non-numeric values (M and $), so R is coercing them into character vectors. It makes sense that the number of installs is character, even though it is generally numeric, since we do not have the EXACT number of installs. Lastly, the Last Updated variable could be converted to a date. All of this can be fixed during pre-processing, though.
+
+**8: Use the function `head()` to look at the first few rows of the apps dataset.**
+```{r results='hide', warning=FALSE}
+head(df) 
+```
+
+```{r echo=FALSE}
+df_alt %>%
+  head() %>%
+  datatable(options = list(scrollX = TRUE))
+```
+
+**9: Repeat steps 5, 6, and 7 but now for “data/students.xlsx” (NB: You’ll need a function from the package `readxl`). Also try out the function `tail()` and `View()` (with a capital V).**
+```{r results='hide'}
+students <- read_excel("students.xlsx")
+
+View(students)
+tail(students) #shows the last 6 rows of a data frame, unless otherwise specified
+```
+
+```{r echo=FALSE}
+students %>%
+  tail() %>%
+  datatable()
+```
+
+**10: Create a summary of the three columns in the `students` dataset using the `summary()` function. What is the range of the grades achieved by the students?**
+```{r}
+summary(students)
+#The range of grades achieves by students is 4.84 - 9.29.
+```
+
+-----
+
+# Data transformation with `dplyr` verbs
+
+**11: Look at the help pages for `filter()` (especially the examples) and show the students with a grade lower than 5.5.**
+```{r results='hide', message=FALSE}
+#looking at the help page 
+?filter
+```
+```{r results='hide'}
+#show the students with a grade lower than 5.5
+students %>% 
+  filter(grade < 5.5)
+```
+```{r echo=FALSE}
+students %>% 
+  filter(grade < 5.5) %>%
+  datatable()
+```
+
+**12: Show only the students with a grade higher than 8 from programme A.**
+```{r results='hide'}
+students %>% 
+  filter(grade < 5.5 & programme == "A")
+```
+```{r echo=FALSE}
+students %>% 
+  filter(grade < 5.5 & programme == "A") %>%
+  datatable()
+```
+
+**13: Sort the `students` dataset such that the students from programme A are on top of the data frame and within the programmes the highest grades come first.**
+```{r results='hide'}
+students %>%
+  arrange(programme, desc(grade))
+#or
+students %>%
+  arrange(programme, -grade)
+```
+```{r echo=FALSE}
+students %>%
+  arrange(programme, desc(grade)) %>%
+  datatable()
+```
+
+**14: Show only the student_number and programme columns from the `students` dataset.**
+```{r results='hide'}
+students %>%
+  select(student_number, programme)
+#or
+students %>% 
+  select(-grade)
+```
+```{r echo=FALSE}
+students %>%
+  select(student_number, programme) %>%
+  datatable()
+```
+
+**15: Use `mutate()` and `recode()` to change the codes in the programme column of the students dataset to their names. Store the result in a variable called students_recoded.**
+```{r results='hide'}
+students_recoded <- students %>%
+  mutate(programme_recoded = recode(programme, "A" = "Science", "B" = "Social Science"))
+#or
+students_recoded_alt <- students %>%
+  mutate(programme_recoded = ifelse(programme == "A", "Science", "Social Science"))
+```
+```{r echo=FALSE}
+students_recoded %>%
+  head %>%
+  datatable()
+```
+
+-----
+
+# Data processing pipelines
+
+**16: Create a data processing pipeline that (a) loads the `apps` dataset, (b) parses the number of installs as 'Downloads' variable using `mutate()` and `parse_number()`, (c) shows only apps with more than 500 000 000 downloads, (d) orders them by rating (best on top), and (e) shows only the relevant columns (you can choose which are relevant, but select at least the Rating and Category variables). Save the result under the name `popular_apps`.
+```{r warning=FALSE, message=FALSE, results='hide'}
+popular_apps <- read_csv(file = "googleplaystore.csv") %>%
+  mutate(Downloads = parse_number(Installs)) %>%
+  filter(Downloads > 500000000) %>%
+  arrange(desc(Rating)) %>%
+  mutate(Rating = as.numeric(Rating)) %>%
+  select(App, Downloads, Rating, Category, Reviews, Genres, Type) %>%
+  distinct(App, .keep_all = T)
+```
+```{r echo=FALSE}
+popular_apps %>%
+  head() %>%
+  datatable()
+```
+
+**17: Show the median, minimum, and maximum for the popular apps dataset you made in the previous assignment.**
+```{r}
+popular_apps %>%
+  summarise("median" = median(Rating, na.rm = T), "maximum" = max(Rating, na.rm = T), "minimum" = min(Rating, na.rm = T))
+```
+
+The `summarise()` function works with any function that takes a vector of numbers and outputs a single number. For example, we can create our own Median Absolute Deviation (MAD) function:
+```{r}
+mad <- function(x) {
+  median(abs(x - median(x)))
+}
+```
+
+**18: Add the median absolute deviation to the summaries you made before.**
+```{r}
+popular_apps %>%
+  summarise("median" = median(Rating, na.rm = T), "maximum" = max(Rating, na.rm = T), "minimum" = min(Rating, na.rm = T), "MAD" = mad(Rating))
+```
+
+**19: Create a grouped summary of the ratings per category in the popular apps dataset.**
+```{r results='hide'}
+popular_apps %>%
+  group_by(Category) %>%
+  summarise("mean_rating" = mean(Rating, na.rm = T))
+```
+```{r echo=FALSE}
+popular_apps %>%
+  group_by(Category) %>%
+  summarise("mean_rating" = round(mean(Rating, na.rm = T), digits = 2)) %>%
+  datatable()
+```
+
+-----
+
+# Final exercise
+
+**20: Create an interesting summary based on the Google play store apps dataset. An example could be “do games get higher ratings than communication apps?”**
+
+For this one, I just examined which categories have the highest average ratings and then removed any average ratings below 4, then arranged them with the highest ratings first, and kept only the top 5. The Games and Photography Categories have the highest average rating (both 4.5), followed by Productivity, Tools, and finally Entertainment. 
+```{r message=FALSE, results='hide'}
+popular_apps %>%
+  group_by(Category) %>%
+  summarise("mean_rating" = mean(Rating, na.rm = T)) %>%
+  filter(mean_rating > 4) %>%
+  arrange(-mean_rating) %>%
+  top_n(n = 5)
+```
+```{r echo=FALSE, message=FALSE}
+popular_apps %>%
+  group_by(Category) %>%
+  summarise("mean_rating" = mean(Rating, na.rm = T)) %>%
+  filter(mean_rating > 4) %>%
+  arrange(-mean_rating) %>%
+  top_n(n = 5) %>%
+  datatable()
+```
+
+I then wanted do this for Genres, but it turned out no different. Apparently the Arcade genre is synonymous with the Games category. 
+```{r results='hide'}
+popular_apps %>%
+  group_by(Genres) %>%
+  summarise("mean_rating" = mean(Rating, na.rm = T)) %>%
+  filter(mean_rating > 4) %>%
+  arrange(-mean_rating) %>%
+  top_n(n = 5)
+```
+```{r echo=FALSE, message=FALSE}
+popular_apps %>%
+  group_by(Genres) %>%
+  summarise("mean_rating" = mean(Rating, na.rm = T)) %>%
+  filter(mean_rating > 4) %>%
+  arrange(-mean_rating) %>%
+  top_n(n = 5) %>%
+  datatable()
+```
+
+I then decided to try one more where I examined whether Free or Paid games receive higher ratings. This worked and free apps have a mean rating of 4.22. However, it was interesting that only Free apps popped up, when there is a distinction between Free and Paid in the original data set. This made me realize that all of the popular apps, which we specified with Downloads > 500000000, are Free. There are no paid ones which exceed our threshold. 
+```{r}
+popular_apps %>% 
+  group_by(Type) %>%
+  summarise("mean_rating" = mean(Rating, na.rm = T))
+```
+

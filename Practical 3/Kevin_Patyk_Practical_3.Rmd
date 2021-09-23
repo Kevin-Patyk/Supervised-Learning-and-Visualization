@@ -1,0 +1,293 @@
+---
+title: "Practical 3"
+author: "Kevin Patyk"
+date: "9/21/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+# Loading the required packages
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(magrittr)
+library(mice)
+library(DAAG)
+library(DT)
+```
+
+-----
+
+# Getting familiar with the `boys` data.
+```{r}
+#inspecting the first 6 observations
+boys %>%
+  head() %>%
+  datatable()
+```
+```{r}
+#inspecting the last 6 observations
+boys %>% 
+  head() %>%
+  datatable()
+```
+
+It seems that the data is sorted on the `age` variable. We can verify this using:
+```{r}
+!is.unsorted(boys$age)
+```
+Indeed, the data is sorted on `age`. In R, there is no `is.sorted()` function, but we can test whether the data is sorted by testing whether the data is not unsorted.
+
+Now, we want to obtain a summary of all the variables to get a better understanding of the data.
+```{r}
+summary(boys)
+```
+
+**1: Create a histogram of the variable `age` using the function `geom_histogram()`.**
+```{r message=FALSE}
+boys %>% 
+  ggplot(aes(x = age)) +
+  geom_histogram(fill = "red", color = "black") +
+  labs(title = "Age Distribution") +
+  theme_minimal()
+```
+**2: Create a bar chart of the variable `gen` using the function `geom_bar()`.**
+```{r}
+boys %>% 
+  ggplot(aes(x = gen)) +
+  geom_bar(fill = "yellow", color = "black") +
+  labs(title = "Distribution of Gen") +
+  theme_minimal()
+```
+
+-----
+
+# Assessing Missing Data
+
+Now we know that there is a substantial amount of missing data, it is time to assess how severe the missingness problem is. One way to do this is by asking for the missing data pattern, using the function `md.pattern()` from `mice`.
+```{r}
+md.pattern(boys)
+```
+
+**3: Create a missingness indicator for the variables `gen`, `phb` and `tv`.**
+```{r}
+missing_boys <- boys %>%
+  mutate(gen_missing = is.na(gen),
+         phb_missing = is.na(phb),
+         tv_missing = is.na(tv))
+```
+**4:Assess whether missingness in the variables `gen`, `phb` and `tv` is related to someones age.**
+```{r}
+missing_boys %>%
+  group_by(gen_missing) %>%
+  summarise("mis_age_gen" = mean(age))
+```
+```{r}
+missing_boys %>% 
+  group_by(phb_missing) %>%
+  summarise("mis_phb_gen" = mean(age))
+```
+```{r}
+missing_boys %>% 
+  group_by(tv_missing) %>%
+  summarise("mis_tv_gen" = mean(age))
+```
+From this, we can see that those with a lower age tend to have more missing data than those with a higher age. 
+
+**5: Create a histogram for the variable `age`, faceted by whether or not someone has a missing value on `gen`.**
+```{r message=FALSE}
+missing_boys %>%
+  ggplot(aes(x = age)) +
+  geom_histogram(color = "black", fill = "red") + 
+  facet_wrap( ~ gen_missing) +
+  theme_minimal()
+```
+These histograms show us that missing values for the gen variable very frequently happen between the ages of 0 and 5. 
+
+**6: Create a scatterplot with `age` on the x-axis and `bmi` on the y-axis, using the function `geom_point()`.**
+```{r message=FALSE}
+missing_boys %>% 
+  ggplot(aes(x = age, y = bmi)) + 
+  geom_point(shape = 21, fill = "red", color = "black", size = 2) +
+  theme_minimal()
+```
+From this scatterplot, we can see that, as `age` increases, `bmi` also increases. However, there is a cluster around 0. This makes sense though, as if you do not exist, you would not have a BMI. 
+
+**7: Add a colour aesthetic to the previous plot using the missingness indicator of the variable `gen`.**
+```{r message=FALSE, warning=FALSE}
+missing_boys %>% 
+  ggplot(aes(x = age, y = bmi)) + 
+  geom_point(aes(fill = gen_missing), shape = 21, color = "black", size = 2) +
+  theme_minimal()
+```
+From this scatterplot, we can see that we have a substantial amount of missing values for `gen`, especially between the ages of 0 and about 7. We see this before in the faceted histogram.
+
+-----
+
+# Visualizing the `boys` data
+
+**8: Visualize the relationship between `reg` (region) and `age` using a boxplot.**
+```{r}
+boys %>%
+  ggplot(aes(x = reg, y = age))+
+  geom_boxplot(color = "blue")+
+  theme_minimal()
+```
+
+**9: Create a density plot of `age`, splitting the densities by `gen` using the fill aesthetic.**
+```{r}
+boys %>% 
+  ggplot(aes(x = age)) +
+  geom_density(aes(fill = gen), alpha = .5) +
+  theme_minimal() +
+  labs(title = "Density Plot of Age by Gen")
+  
+```
+
+**10: Create a diverging bar chart for `hgt` in the `boys` data set, that displays for every age year that year’s mean height in deviations from the overall average hgt.**
+```{r}
+boys %>%
+  mutate(Age = cut(age, 0:22, labels = paste0(0:21, " years")), 
+         Height = hgt - mean(hgt, na.rm = TRUE)) %>% #creating two new variables with Age as a category and centered height variable
+  group_by(Age) %>% #grouping by the Age category variable we created in the first mutuate
+  summarize(Height = mean(Height, na.rm = TRUE)) %>% #getting the mean of the centered height variable grouped by age
+  mutate(color = ifelse(Height > 0, "Above average", "Below average")) %>% #creating a dichotomous variable for above and below average heights 
+  ggplot(aes(x = Height, y = Age, fill = color)) + #creating the base ggplot code 
+  geom_bar(stat = "identity") + #setting the geom as a bar chart
+  scale_fill_brewer(palette = "Set1") + #setting the color scheme 
+  theme_minimal() + #setting the theme to minimal 
+  theme(legend.title = element_blank()) #removing the legend title 
+  
+```
+
+-----
+
+# Regression Visualization
+
+**11: Load the data `elastic1` and `elastic2` and bind the data frames together using the function `bind_rows()` and add a grouping variable indicating whether an observation comes from `elastic1` or from `elastic2`.**
+```{r}
+elastic3 <- bind_rows("elastic1" = elastic1,
+                      "elastic2" = elastic2,
+                      .id = "set")
+```
+
+**12: 12. Create a scatterplot mapping `stretch` on the x-axis and `distance` on the y-axis, and map the just created group indicator as the color aesthetic.**
+```{r}
+elastic3 %>%
+  ggplot(aes(x = stretch, y = distance)) +
+  geom_point(aes(color = set), size = 2) +
+  theme_minimal() + 
+  scale_color_brewer(palette = "Set2")
+```
+
+**13: Recreate the previous plot, but now assess whether the results of the two data sets appear consistent by adding a linear regression line.**
+```{r message=FALSE}
+elastic3 %>%
+  ggplot(aes(x = stretch, y = distance)) +
+  geom_point(aes(color = set), size = 2) +
+  geom_smooth(method = "lm", aes(color = set), fill = NA) + 
+  theme_minimal() + 
+  scale_color_brewer(palette = "Set2")
+```
+
+**14: For each of the data sets `elastic1` and `elastic2`, fit a regression model with `y = distance` on `x = stretch` using `lm(y ~ x, data)`.**
+```{r}
+#model 1 for the elastic1 dataset
+mod1 <- elastic1 %$% 
+  lm(distance ~ stretch)
+summary(mod1)
+```
+According to this output, `stretch` is a significant predictor of `distance`. For every 1 unit increase in `stretch`, `distance` increases by 6.57 units. In this model, the intercept is not significant.
+
+```{r}
+#model 2 for the elastic2 dataset
+mod2 <- elastic2 %$% 
+  lm(distance ~ stretch)
+summary(mod2)
+```
+According to this output, `stretch` is a significant predictor of `distance`. For every 1 unit increase in `stretch`, `distance` increases by 5.95 units. In this model, the intercept is significant. 
+
+**15: For both of the previously created fitted models, determine the fitted values and the standard errors of the fitted values, and the proportion explained variance R2**
+```{r}
+mod1 %>%
+  predict(se.fit = T)
+```
+```{r}
+mod2 %>%
+  predict(se.fit = T)
+```
+Now, we will look at the R2 values for each of the models. 
+```{r}
+mod1 %>%
+  summary() %$%
+  r.squared
+```
+The R squared value is 0.80. This means that 80% of the variation in the dependent variable (Y) is explained by the predictor(s) (X).
+```{r}
+mod2 %>%
+  summary() %$%
+  r.squared
+```
+The R squared value is 0.98. This means that 98% of the variation in the dependent variable (Y) is explained by the predictor(s) (X).
+
+From examining the standard error of the residuals and the R2 values for each model, we can see that model 2 has lower standard errors and a higher R2. This is because elastic2 has a range of values and lacks an outlier.
+
+**16: Study the residual versus leverage plots for both models.**
+```{r}
+#residual plot for mod1 (elastic1)
+mod1 %>%
+  plot(which = 5)
+```
+```{r}
+#residual plot for mod2 (elastic2)
+mod2 %>%
+  plot(which = 5)
+```
+
+For elastic1, case 2 is shown to have the highest influence on estimation. But, if we look at the residuals, we can see that case 7 has the highest residual.
+```{r}
+mod1$residuals
+```
+
+**17: Use the `elastic2` variable `stretch` to obtain predictions on the model fitted on `elastic1`.**
+```{r}
+pred <- predict(object = mod1, newdata = elastic2)
+```
+I believe this makes it so that we are predicting `elastic1` `distance` by `elastic2` `stretch`. 
+
+**18: Now make a scatterplot to investigate similarity between the predicted values and the observed values for `elastic2`.**
+```{r message=FALSE}
+pred_dat <- 
+  data.frame(distance = pred, #predicted distance 
+             stretch  = elastic2$stretch) %>% #keeping the stretch variable (predictor) as is 
+  bind_rows("Predicted" = ., #now, we are going to bind the rows together, as we did before in a previous example. In this, we are bidning the rows of the predicted data frame and the original elastic2 data set. 
+            "Observed"  = elastic2, 
+            .id = "Predicted")
+
+pred_dat %>% 
+  ggplot(aes(x = stretch, y = distance, color = Predicted)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  theme_minimal() + 
+  labs(title = "Predicted vs Observed Distance for elastic2")
+```
+
+Trying a different way of doing this, which is how I originally coded it.
+```{r message=FALSE}
+pred_df <- 
+  data.frame("distance" = c(pred, elastic2$distance), 
+             "stretch" = rep(elastic2$stretch, 2),
+             "label" = c(rep("Predicted", 9), rep("Observed", 9)))
+
+pred_df %>% 
+  ggplot(aes(x = stretch, y = distance, color = label)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  theme_minimal() + 
+  labs(title = "Predicted vs Observed Distance for elastic2")
+```
+Ultimately, the results are the same.
+
+-----
