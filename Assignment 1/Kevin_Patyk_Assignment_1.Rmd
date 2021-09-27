@@ -1,0 +1,483 @@
+---
+title: "Assignment 1"
+author: "Kevin Patyk"
+date: "9/27/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center')
+```
+
+# Loading the packages that will be used
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(magrittr)
+library(DT)
+```
+
+-----
+
+# Data import and preliminary examination
+
+```{r message=FALSE, warning=FALSE}
+sleep_df <- read_csv("Subjective_Sleep_Quality.csv")
+```
+
+**Checking the number of observations and the number of variables.** 
+```{r}
+nrow(sleep_df)
+ncol(sleep_df)
+```
+
+**Examining the first 6 rows of the data.**
+```{r results='hide'}
+sleep_df %>%
+  head()
+```
+
+```{r echo=FALSE}
+sleep_df %>%
+  head() %>%
+  datatable(options = list(scrollX = TRUE))
+```
+
+**Examining the last 6 rows of the data.**
+```{r results='hide'}
+sleep_df %>%
+  tail()
+```
+
+```{r echo=FALSE}
+sleep_df %>%
+  tail() %>%
+  datatable(options = list(scrollX = TRUE))
+```
+
+**Examining the structure of the data and data types.**
+```{r message=FALSE, results='hide'}
+str(sleep_df)
+```
+
+**The variables `Department_Name`, `Year_of_Study`, `Sex`, and the other dichotomous variables need to be converted to a factors.**
+```{r}
+sleep_df %<>%
+  mutate(Department_Name = as.factor(Department_Name),
+         Year_of_Study = as.factor(Year_of_Study),
+         Sex = as.factor(Sex),
+         coffee_dichotomous = as.factor(coffee_dichotomous),
+         Cigarettes_dichotomous = as.factor(Cigarettes_dichotomous),
+         Alcohol_dichotomous = as.factor(Alcohol_dichotomous),
+         Caffeine_dichotomous = as.factor(Caffeine_dichotomous), 
+         coffee_dichotomous = as.factor(coffee_dichotomous))
+```
+
+-----
+
+# Obtaining descriptive statistics and frequencies for categorical/dichotomous variables
+
+**Obtaining the mean and standard deviation for age.**
+```{r}
+sleep_df %$% 
+  mean(Age)
+
+sleep_df %$% 
+  sd(Age)
+```
+
+**Getting a table of how many students are there per each department.**
+```{r results='hide'}
+sleep_df %$%
+  table(Department_Name)
+```
+
+```{r echo=FALSE}
+sleep_df %$%
+  as.data.frame(table(Department_Name)) %>%
+  arrange(-Freq) %>%
+  datatable()
+```
+
+**Getting a table of sex.**
+```{r}
+#1 = male, 2 = female
+sleep_df %$%
+  table(Sex)
+```
+
+**Getting a table of how many students are in each year of study.**
+```{r}
+sleep_df %$%
+  table(Year_of_Study)
+```
+
+**Getting a table of tobacco consumption.**
+```{r}
+#1 = smoker, 2 = non-smoker
+sleep_df %$%
+  table(Cigarettes_dichotomous)
+```
+
+**Getting a table of caffeine consumption.**
+```{r}
+#1 = consumes caffeine, 2 = does not consume caffeine
+sleep_df %$%
+  table(Caffeine_dichotomous)
+```
+
+**Getting a table of alcohol consumption.**
+```{r}
+#1 = consumes alcohol, 2 = does not consume alcohol
+sleep_df %$%
+  table(Alcohol_dichotomous)
+```
+
+**Getting a table of coffee consumption.**
+```{r}
+#1 = consumes coffe, 2 = does not consume coffee
+sleep_df %$%
+  table(coffee_dichotomous)
+```
+
+-----
+
+## Describing the basics of the dataset prior to more in-depth exploratory data analysis
+
+This dataset was collected by Norbury and Evans (2018) for a study which was examining sleep quality in university students. A total of 546 university students with ages ranging from 18 to 55 were included. The students came from two universities which were located in South-East England. Participants completed an online self-report survey that asked questions about age, gender, year of study, and field of study. Furthermore, data was collected on sleep quality, anxiety, preferred start time for classes, and chronotype. Lastly, information on coffee, caffeine, alcohol, and tobacco use was collected; these variables were coded dichotomously (1 = yes, 2 = no). There was no missing data. 
+
+The mean age of participants in the study was 20.41 (SD = 4.31). A majority of the students (89%) came from the Psychology department, followed by Other, Life Sciences, and Social Sciences. Only a total of 5 students came from Business School, English and Creative Writing, Dance, Drama, and Media and Culture. There were 291 first years, 225 second years, and 30 third years. A majority of the students smoked (85%) and consumed caffeine (60%). Almost half of the students consumed alcohol (48%) and only a small minority drank coffee (12%). Lastly, a majority of the participants were female (84%).
+
+-----
+
+# Exploratory data analysis part 1: Exploring general sleeping trends
+
+**Getting descriptive statistics for sleep duration.**
+```{r}
+#need to make a function to obtain means and standard deviations quickly
+DescriptiveStatistics <- function(x) {
+  Mean <- round(mean(x), digits = 2)
+  Standard_Deviation <- round(sd(x), digits = 2)
+  return(c(Mean = Mean, Standard_Deviation = Standard_Deviation))
+}
+```
+
+```{r}
+#running the function over our sleep duration variables of interest
+desc_stats_sleep <- sapply(X = sleep_df[, c(12, 13, 14)], FUN = DescriptiveStatistics)
+```
+
+```{r echo=FALSE}
+desc_stats_sleep %>%
+  t() %>%
+  datatable()
+```
+
+**Examining a histogram of average weekly sleep duration.**
+```{r}
+sleep_df %>%
+  ggplot(aes(x = Avg_Weekly_Sleep_Duration)) + 
+  geom_histogram(binwidth = .5, color = "black", fill = "blue", alpha = .75) +
+  xlab(label = "Average Weekly Sleep Duration") + 
+  ggtitle(label = "Histogram of Average Weekly Sleep Duration") + 
+  theme(axis.title.y = element_blank()) +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+**Examining a histogram of average sleep duration on working days.**
+```{r}
+sleep_df %>%
+  ggplot(aes(x = Avg_Sleep_Working_days)) + 
+  geom_histogram(binwidth = .5, color = "black", fill = "blue", alpha = .75) +
+  xlab(label = "Average Sleep Duration During Working Days") + 
+  ggtitle(label = "Histogram of Average Sleep Duration During Working Days") + 
+  theme(axis.title.y = element_blank()) +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+**Examining a histogram of average sleep duration on free days.**
+```{r}
+sleep_df %>%
+  ggplot(aes(x = Avg_sleep_free_days)) + 
+  geom_histogram(binwidth = .5, color = "black", fill = "blue", alpha = .75) +
+  xlab(label = "Average Sleep Duration During Free Days") + 
+  ggtitle(label = "Histogram of Average Sleep Duration During Free Days") + 
+  theme(axis.title.y = element_blank()) +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+**Examining the relationships between average weekly sleep duration, average sleep duration during working days, and average sleep duration during free days.** 
+```{r message=FALSE}
+#average weekly sleep duration vs average sleep working days
+sleep_df %>%
+  ggplot(aes(x = Avg_Weekly_Sleep_Duration, y = Avg_Sleep_Working_days)) + 
+  geom_point(color = "black", shape = 21, fill = "yellow") + 
+  geom_smooth(method = "lm", fill = NA, color = "blue") + 
+  xlab("Average Weekly Sleep Duration") +
+  ylab("Average Sleep Working Days") +
+  ggtitle("Average Weekly Sleep Duration vs Average Sleep Working Days") +
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+
+```{r message=FALSE}
+#average weekly sleep duration vs average sleep during free days
+sleep_df %>%
+  ggplot(aes(x = Avg_Weekly_Sleep_Duration, y = Avg_sleep_free_days)) + 
+  geom_point(color = "black", shape = 21, fill = "yellow") + 
+  geom_smooth(method = "lm", fill = NA, color = "blue") + 
+  xlab("Average Weekly Sleep Duration") +
+  ylab("Average Sleep Free Days") +
+  ggtitle("Average Weekly Sleep Duration vs Average Sleep Free Days") +
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+
+```{r message=FALSE}
+#average sleep duration working days vs average sleep during free days
+sleep_df %>%
+  ggplot(aes(x = Avg_Sleep_Working_days, y = Avg_sleep_free_days)) + 
+  geom_point(color = "black", shape = 21, fill = "yellow") + 
+  geom_smooth(method = "lm", fill = NA, color = "blue") + 
+  xlab("Average Sleep Working Days") +
+  ylab("Average Sleep Free Days") +
+  ggtitle("Average Sleep Working Days vs Average Sleep Free Days") +
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+
+## Conclusions from this section:
+
+I wanted to get an idea of the average sleep duration that students within the study are getting on average per week, during working days, and during free days. More specifically, I was curious about the differences during working and free days, since, for students, the difference between the two, I thought, would be substantial. The mean average weekly sleep duration across all students is 7.49 (SD = 1.39). The mean average sleep duration during working days is 6.55 (SD = 1.5). The mean average sleep duration during free days is 8.8 (SD = 1.61). This makes sense, as students throughout the week need to be up for classes and can spend less time sleeping than on off days. I also made histograms for these variables of interest because I wanted to check the distributions and if there were any outliers. Some outliers were found, with some students having an average weekly sleep duration of 12 of hours more. For average sleep during working days, some students slept, on average, 10 hours with one student sleeping 12. For average sleep duration during free days, I excpected the histogram to shift right, as people would be sleeping more then; there were still outliers, with some students sleeping, on average, over 12 hours on free days. 
+
+Lastly, I examined the relationships between the average weekly sleep, average sleep duration during work days, and average sleep duration during free days. The scatterplots showed that average weekly sleep had a positive relationship with average sleep during work and free days, which makes sense, since the more you sleep on both types of days, the higher your average sleep. However, I expected that the relationship between average sleep work days and average sleep free days would be negative, since if a student slept less on the work days, then they would sleep more during free days. However, this was not the case as the relationship was still positive. 
+
+-----
+
+# Exploratory data analysis part 2: Exploring sleeping trends, substance use, and anxiety
+
+**Checking the weekly average sleep duration based on cigarette use.**
+```{r}
+sleep_df %>%
+  group_by(Cigarettes_dichotomous) %>%
+  summarise(Avg_Weekly_Sleep_Duration = round(mean(Avg_Weekly_Sleep_Duration), digits = 2)) %>%
+  arrange(-Avg_Weekly_Sleep_Duration) 
+```
+
+**Checking the weekly average sleep duration based on alcohol use.**
+```{r}
+sleep_df %>%
+  group_by(Alcohol_dichotomous) %>%
+  summarise(Avg_Weekly_Sleep_Duration = round(mean(Avg_Weekly_Sleep_Duration), digits = 2)) %>%
+  arrange(-Avg_Weekly_Sleep_Duration) 
+```
+
+**Checking the weekly average sleep duration based on caffeine use.**
+```{r}
+sleep_df %>%
+  group_by(Caffeine_dichotomous) %>%
+  summarise(Avg_Weekly_Sleep_Duration = round(mean(Avg_Weekly_Sleep_Duration), digits = 2)) %>%
+  arrange(-Avg_Weekly_Sleep_Duration) 
+```
+
+**Checking the weekly average sleep duration based on coffee use.**
+```{r}
+sleep_df %>%
+  group_by(coffee_dichotomous) %>%
+  summarise(Avg_Weekly_Sleep_Duration = round(mean(Avg_Weekly_Sleep_Duration), digits = 2)) %>%
+  arrange(-Avg_Weekly_Sleep_Duration) 
+```
+
+**Examining cigarette smoking and anxiety levels via boxplot.**
+```{r}
+sleep_df %>%
+  ggplot(aes(x = Cigarettes_dichotomous, y = Trait_Anxiety)) +
+  geom_boxplot(outlier.colour = NA, aes(fill = Cigarettes_dichotomous), show.legend = F) +
+  ylab("Anxiety Levels") +
+  xlab("Cigarette Smoking") +
+  scale_x_discrete(labels = c("Yes", "No")) + 
+  ggtitle("Cigarette Smoking and Anxiety Levels") + 
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+
+**Examining alcohol use and anxiety levels via boxplot.**
+```{r}
+sleep_df %>%
+  ggplot(aes(x = Alcohol_dichotomous, y = Trait_Anxiety)) +
+  geom_boxplot(outlier.colour = NA, aes(fill = Alcohol_dichotomous), show.legend = F) +
+  ylab("Anxiety Levels") +
+  xlab("Alcohol Use") +
+  scale_x_discrete(labels = c("Yes", "No")) + 
+  ggtitle("Alcohol Use and Anxiety Levels") + 
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+
+**Examining caffeine use and anxiety levels via boxplot.**
+```{r}
+sleep_df %>%
+  ggplot(aes(x = Caffeine_dichotomous, y = Trait_Anxiety)) +
+  geom_boxplot(outlier.colour = NA, aes(fill = Caffeine_dichotomous), show.legend = F) +
+  ylab("Anxiety Levels") +
+  xlab("Caffeine Use") +
+  scale_x_discrete(labels = c("Yes", "No")) + 
+  ggtitle("Caffeine Use and Anxiety Levels") + 
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+
+**Examining coffee use and anxiety levels via boxplot.**
+```{r}
+sleep_df %>%
+  ggplot(aes(x = coffee_dichotomous, y = Trait_Anxiety)) +
+  geom_boxplot(outlier.colour = NA, aes(fill = coffee_dichotomous), show.legend = F) +
+  ylab("Anxiety Levels") +
+  xlab("Coffee Drinking") +
+  scale_x_discrete(labels = c("Yes", "No")) + 
+  ggtitle("Coffee Drinking and Anxiety Levels") + 
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+
+**Examining gender and anxiety levels via boxplot.**
+```{r}
+sleep_df %>%
+  ggplot(aes(x = Sex, y = Trait_Anxiety)) +
+  geom_boxplot(outlier.colour = NA, aes(fill = Sex), show.legend = F) +
+  ylab("Anxiety Levels") +
+  xlab("Gender") +
+  scale_x_discrete(labels = c("Male", "Female")) + 
+  ggtitle("Gender and Anxiety Levels") + 
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+
+## Conclusions from this section:
+
+In this section, I wanted to get more of an idea about average weekly sleep duration, substance use, and anxiety. This is because substance use typically does have an affect on length and quality of sleep and because it can also affect anxiety levels. Lastly, I wanted to look at the difference in anxiety levels between genders because gender can have an affect on anxiety levels. The results show that those who do not smoke cigarettes have a higher average weekly sleep duration,  alcohol users have a higher average weekly sleep duration, caffeine users have a lower average weekly sleep duration, and that coffee drinkers have a higher average sleep duration, but not by much. Regarding anxiety levels and substance use, smokers appear to have less anxiety than non-smokers, those who consume alcohol have less anxiety than those who do not, caffeine users and caffeine non-users have almost the same amount of anxiety, and coffee drinkers have a little bit more anxiety than those who do not consume coffee. Lastly, females tend to have far more anxiety than males. 
+
+-----
+
+# Exploratory data analysis part 3: Exploring sleeping trends and anxiety within departments and across years 
+
+**Checking the average weekly sleep duration per department.**
+```{r results='hide'}
+sleep_df %>%
+  group_by(Department_Name) %>%
+  summarise(Avg_Wk_Sleep_Dep = round(mean(Avg_Weekly_Sleep_Duration), digits = 2)) %>%
+  arrange(-Avg_Wk_Sleep_Dep)
+```
+
+```{r echo=FALSE}
+sleep_df %>%
+  group_by(Department_Name) %>%
+  summarise(Avg_Wk_Sleep_Dep = round(mean(Avg_Weekly_Sleep_Duration), digits = 2)) %>%
+  arrange(-Avg_Wk_Sleep_Dep) %>%
+  datatable()
+```
+
+**Checking the average sleep duration during working days per department.**
+```{r results='hide'}
+sleep_df %>%
+  group_by(Department_Name) %>%
+  summarise(Avg_Sleep_Work_Dep = round(mean(Avg_Sleep_Working_days), digits = 2)) %>%
+  arrange(-Avg_Sleep_Work_Dep)
+```
+
+```{r echo=FALSE}
+sleep_df %>%
+  group_by(Department_Name) %>%
+  summarise(
+    Avg_Sleep_Work_Dep = round(mean(Avg_Sleep_Working_days), digits = 2)) %>%
+  arrange(-Avg_Sleep_Work_Dep) %>%
+  datatable()
+```
+
+**Checking the average sleep duration during free days per department.**
+```{r results='hide'}
+sleep_df %>%
+  group_by(Department_Name) %>%
+  summarise(Avg_Sleep_Free_Dep = round(mean(Avg_sleep_free_days), digits = 2)) %>%
+  arrange(-Avg_Sleep_Free_Dep)
+```
+
+```{r echo=FALSE}
+sleep_df %>%
+  group_by(Department_Name) %>%
+  summarise(Avg_Sleep_Free_Dep = round(mean(Avg_sleep_free_days), digits = 2)) %>%
+  arrange(-Avg_Sleep_Free_Dep) %>%
+  datatable()
+```
+
+**Checking the average weekly sleep duration for year of study.**
+```{r results='hide'}
+sleep_df %>%
+  group_by(Year_of_Study) %>%
+  summarise(Avg_Seep_Week_Yr = round(mean(Avg_Weekly_Sleep_Duration), digits = 2)) %>%
+  arrange(-Avg_Seep_Week_Yr)
+```
+
+```{r echo=FALSE}
+sleep_df %>%
+  group_by(Year_of_Study) %>%
+  summarise(Avg_Wk_Sleep_Yr = round(mean(Avg_Weekly_Sleep_Duration), digits = 2)) %>%
+  arrange(-Avg_Wk_Sleep_Yr) %>%
+  datatable()
+```
+
+**Checking the average sleep duration during work days for year of study.**
+```{r results='hide'}
+sleep_df %>%
+  group_by(Year_of_Study) %>%
+  summarise(Avg_Sleep_Work_Yr = round(mean(Avg_Sleep_Working_days), digits = 2)) %>%
+  arrange(-Avg_Sleep_Work_Yr)
+```
+
+```{r echo=FALSE}
+sleep_df %>%
+  group_by(Year_of_Study) %>%
+  summarise(Avg_Sleep_Work_Yr = round(mean(Avg_Sleep_Working_days), digits = 2)) %>%
+  arrange(-Avg_Sleep_Work_Yr) %>%
+  datatable()
+```
+
+
+**Checking the anxiety levels between students in different years of study.**
+```{r}
+sleep_df %>%
+  ggplot(aes(x = Department_Name, y = Trait_Anxiety)) +
+  geom_bar(stat = "identity", aes(fill = Department_Name)) +
+  ggtitle("Anxiety Levels Per Department") +
+  xlab("Department Name") +
+  ylab("Anxiety Levels") +
+  guides(fill=guide_legend(title="Department Name")) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+
+
+**Checking the anxiety levels between students in different years of study.**
+```{r}
+sleep_df %>%
+  ggplot(aes(x = Year_of_Study, y = Trait_Anxiety)) +
+  geom_bar(stat = "identity", aes(fill = Year_of_Study)) +
+  ggtitle("Anxiety Levels Per Year of Study") +
+  xlab("Year of Study") +
+  ylab("Anxiety Levels") +
+  guides(fill=guide_legend(title="Year of Study")) +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## Conclusions from this section:
+
+I wanted to get an idea of how sleep duration and anxiety changes across department and year of study. This is because some departments are seen as more lax than others, which can result in students have more/less sleep and anxiety. From the exploratory work, individuals in the Business School have the highest average weekly sleep duration, with Media and Culture being the lowest. During work days, students in the Dance department slept the most, with Media and Culture being the lowest here too. Finally, during free days, students in Dance department slept the most, with the Social Sciences being the lowest. For year of study, students in the second year had the highest average weekly sleep duration and the highest average sleep duration during work days. This made sense to me as, in the first year of study students are still adjusting to university-level education and third year students are writing their theses, so they may have to work more and sleep less. Finally, our first bar chart shows that students in the Psychology department experience substantially higher amounts of stress than students in other departments. The second bar chart shows that individuals in the first year have the highest anxiety levels, followed by the second year, and then the third. This could be that students in the first year are less experienced with education at such a level, but slowly adjust by the time they reach their final year. 
+
+-----
+
+# References 
+
+Norbury, R., & Evans, S. (2019). *Time to think: Subjective sleep quality, trait anxiety and university start time*. Psychiatry research, 271, 214-219.
+
+-----
+
+<center> 
+
+![](https://www.overthinkingit.com/wp-content/uploads/2017/04/rickness-fig1.jpg)
+
+</center>
+
+-----
+
