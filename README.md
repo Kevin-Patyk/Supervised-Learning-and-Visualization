@@ -6,16 +6,16 @@ This repository is where I store all of my R scripts and HTML files from practic
 
 At the end of this course, students are able to apply and interpret the theories, principles, methods and techniques related to contemporary data science, and understand and explain different approaches to data analysis:
 
-1: Apply data wrangling and preprocessing techniques to tidy data sets.
-2: Apply, implement, understand and explain methods and techniques that are associated with statistical 
+* Apply data wrangling and preprocessing techniques to tidy data sets.
+* Apply, implement, understand and explain methods and techniques that are associated with statistical 
 learning, including regression, trees, clustering, classification techniques and learning ensembles in R.
-3: Evaluate the performance of these techniques with appropriate performance measures.
-4: Select appropriate techniques to solve specific data science problems.
-5: Motivate and explain the choice for techniques to investigate data problems
-6: Implement and understand generic data science tools, such as bootstrapping, cross validation, bagging, boosting and error evaluation in R.
-7: Interpret and evaluate the results of analyses and explain these techniques in simple terminology to a broad audience
-8: Understand and explain the basic principles of data visualization and the grammar of graphics.
-9: Construct appropriate visualizations for each data analysis technique in R.
+* Evaluate the performance of these techniques with appropriate performance measures.
+* Select appropriate techniques to solve specific data science problems.
+* Motivate and explain the choice for techniques to investigate data problems
+* Implement and understand generic data science tools, such as bootstrapping, cross validation, bagging, boosting and error evaluation in R.
+* Interpret and evaluate the results of analyses and explain these techniques in simple terminology to a broad audience
+* Understand and explain the basic principles of data visualization and the grammar of graphics.
+* Construct appropriate visualizations for each data analysis technique in R.
 
 # Course Content: 
 
@@ -25,11 +25,11 @@ During this course, participants will actively learn how to apply the main stati
 
 This course provides a broad introduction to supervised learning and visualization. Topics include:
 
-1: Data manipulation and data wrangling with R.
-2: Data visualization.
-3: Exploratory data analysis.
-4: Regression and classification.
-5: Non-linear modeling.
-6: Bagging, boosting, and ensemble learning.
+* Data manipulation and data wrangling with R.
+* Data visualization.
+* Exploratory data analysis.
+* Regression and classification.
+* Non-linear modeling.
+* Bagging, boosting, and ensemble learning.
 
 Students will learn to adapt these techniques in their way of thinking about analyses problems. This course makes students better equipped for a further career (e.g. junior researcher or research assistant) or education in research, such as a (research) Master program, or a PhD.
