@@ -338,6 +338,8 @@ predict(lr_mod_titanic_2,
 )
 ```
 
+This code is just inputting a data frame with only 2 observations with specific variables. One observation is from the 3rd class, 14 years old, and a male. The other observation is in 2nd class, 14 years old, and is a female. 
+
 According to both models, our hypothetical passenger does not have a large survival probability: our models would classify the boy as not surviving. The girl would likely survive however. This is due to the women and children getting preferred access to the lifeboats. Also 3rd class was way below deck, so it would be more difficult to escape.
 
 -----

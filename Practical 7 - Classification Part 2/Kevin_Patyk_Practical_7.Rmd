@@ -184,6 +184,8 @@ prob_log_new <- predict(object = lr_mod, newdata = cv_dis_new, type = "response"
 mean((prob_log_new - (as.numeric(cv_dis_new$response) - 1)) ^ 2)
 ```
 
+The reason that we subtract -1 from the Brier score (since it is not in the original equation) is because `response` is currently a factor. When R converts a factor to numeric, the numeric assumes the levels of the factor, which in this case are 1 and 2. Thus, we need to subtract 1 since the original formula assumes Yes = 1 and No = 0 rather than 1 and 2. 
+
 The mean squared difference between the probability and the true class is .23. 
 
 -----
