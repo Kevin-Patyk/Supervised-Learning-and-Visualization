@@ -1,0 +1,379 @@
+---
+title: "Assignment 2"
+author: "Kevin Patyk"
+date: "10/28/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center')
+```
+
+# Loading libraries, setting seed, and importing data
+
+**Loading libraries**
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(class)
+library(caret)
+library(plyr)
+```
+
+**Setting the seed for reproducibility.** 
+```{r}
+set.seed(123)
+```
+
+**Importing the data.** 
+```{r message=FALSE}
+drug <- read_csv("drug200.csv") %>%
+    mutate(Sex = as.factor(Sex),
+         BP = as.factor(BP),
+         Cholesterol = as.factor(Cholesterol),
+         Drug = as.factor(Drug))
+```
+
+-----
+
+# Inspecting the data 
+
+**Examining the structure of the data to make sure that all of the variable types are correct,  get a general idea of how each variable looks, and to see the number of observations and variables.** 
+```{r}
+str(drug)
+```
+
+**Inspecting the first 6 observations of the data to make sure that there are no issues with the column names and to see if it was imported correctly.**
+```{r}
+head(drug)
+```
+
+**Checking for the presence of missing values.**
+```{r}
+any(is.na(drug))
+```
+
+**Obtaining basic descriptive statistics and frequency distributions.** 
+```{r}
+summary(drug)
+```
+
+**The `summary()` function does not display standard deviations, so we will do it manually.**
+```{r}
+drug %>%
+  select_if(is.numeric) %>%
+  summarise_all(sd)
+```
+
+**While checking the summary of the dataset, I noticed that there is an inconsistency in the levels of the drug types. In particular, all of the drug types are labeled like "drugA", "drugB", "drugC", and "drugX", while the last is labeled as "DrugY". I decided to fix this just for the sake of consistency.**
+```{r}
+#first, convert drug back to a character
+drug$Drug <- as.character(drug$Drug)
+#second, replace values with "DrugY" to "drugY"
+drug$Drug[drug$Drug == "DrugY"] <- "drugY"
+#then, convert it back to factor
+drug$Drug <- as.factor(drug$Drug)
+```
+
+**Examining histograms for the numeric variables (age and sodium to potassium ratio).**
+```{r message=FALSE, warning=FALSE}
+#histogram for age
+drug %>%
+  ggplot(aes(x = Age)) +
+  geom_histogram(fill = "blue", color = "black", alpha = 0.75) +
+  labs(title = "Distribution of Age") +
+  theme_minimal()
+
+#histogram for sodium to potassium ratio
+drug %>%
+  ggplot(aes(x = Na_to_K)) +
+  geom_histogram(fill = "blue", color = "black", alpha = 0.75) +
+  labs(title = "Distribution of Sodium/Potassium Ratio") +
+  theme_minimal()
+```
+
+**Visualizing other elements of the dataset.**
+```{r}
+drug %>%
+  ggplot(aes(x = Drug)) +
+  geom_bar(aes(fill = Drug), color = "black") +
+  ggtitle("Distribution of Drug Types") +
+  theme_minimal()
+
+drug %>%
+  ggplot(aes(x = Sex, y = Age)) +
+  geom_boxplot(aes(fill = Drug)) +
+  ggtitle("Distribution of Age by Sex") + 
+  theme_minimal()
+
+drug %>%
+  ggplot(aes(x = Cholesterol, y = Na_to_K)) + 
+    geom_boxplot(aes(fill = Drug)) +
+  ggtitle("Distribution of Sodium/Potassium Ratio by Cholesterol") + 
+  ylab("Sodium/Potassium Ratio") + 
+  theme_minimal()
+```
+
+**Examining the separation between classes in the dataset.**
+```{r}
+drug %>%
+  ggplot(aes(x = Age, y = Na_to_K)) +
+  geom_point(aes(color = Drug)) +
+  ggtitle("Drug Class Separation for Age and Sodium/Potassium Ratio") +
+  ylab("Sodium/Potassium Ratio") + 
+  theme_minimal()
+
+drug %>%
+  ggplot(aes(x = Age)) +
+  geom_density(aes(fill = Drug), alpha = 0.4) +
+  ggtitle("Drug Class Separation for Age") +
+  theme_minimal()
+
+drug %>%
+  ggplot(aes(x = Na_to_K)) +
+  geom_density(aes(fill = Drug), alpha = 0.4)+
+  ggtitle("Drug Class Separation for Sodium/Potassium Ratio") +
+  xlab("Sodium/Potassium Ratio") + 
+  theme_minimal()
+```
+
+
+## Describing the dataset
+
+This dataset was obtained from [Kaggle](https://www.kaggle.com/prathamtripathi/drug-classification). It contains 200 observations and 6 variables. The 6 variables are Age, Sex (male or female), Blood Pressure Levels (high, low, or normal), Cholesterol (high or normal), Na_to_K, which stands for sodium to potassium ratio in the blood, and Drug Type (drugA, drugB, drugC, drugX, or drugY). The target feature is Drug Type, with all other variables serving as feature sets; this is a classification problem. There are no missing data. The mean age for participants is 44.31 (SD = 16.54) and the mean sodium to potassium ratio in the blood is 16.08 (SD = 7.22). The age variable is not normally distributed and the sodium to potassium distribution is positively skewed.
+
+A majority of the participants are male (52%) and the rest are female (48%). Many of the participants had high blood pressure levels (39%), followed by low blood pressure levels (32%) and finally normal (29%). Over half of the participants (52%) had high cholesterol levels while the rest were normal (48%). For drug type, drugY was the most prevalent (46%), followed by drugX (27%), then by drugA (11%), and finally by drugB/drugC (both 8%). Ages within genders were similarly distributed, with the drugB group having the highest average age. For high and normal levels of cholesterol, the average sodium to potassium ratio was the highest for drugY. The separation between the groups was not particularly strong. For age, the strongest separation occurred between drugA and drugB, while for the sodium to potassium ratio, only drugY shows strong separation. 
+
+-----
+
+# Implementing a simple model
+
+For the simple model, we will be using K-nearest neighbors (KNN) for classification.
+
+**Prior to running the KNN model, we should scale the predictor variables. This is so that the algorithm will not be affected by the magnitude of different variables. The variables will be scaled using standard scaling:**
+
+$$x_i = \frac{x_i - \bar{x}} {\sigma} $$
+
+```{r}
+#scaling the variables
+drug_scaled <- drug %>%
+  mutate(
+    Age = scale(Age),
+    Sex = scale(as.numeric(Sex)),
+    BP = scale(as.numeric(BP)),
+    Cholesterol = scale(as.numeric(Cholesterol)),
+    Na_to_K = scale(Na_to_K)
+)
+
+#double checking to make sure that it worked properly 
+head(drug_scaled)
+```
+
+**Splitting the data into a training and testing set. We will take 80% of the observations for the training set and 20% of the observations for the testing set.**
+```{r}
+drug_scaled <- drug_scaled %>%
+  mutate(split = sample(rep(c("train", "test"), times = c(160, 40))))
+
+drug_train <- drug_scaled %>%
+  filter(split == "train") %>%
+  dplyr::select(-split)
+
+drug_test <- drug_scaled %>%
+  filter(split == "test") %>%
+  dplyr::select(-split)
+```
+
+**Fitting the KNN model on the training data. We will be using 10-fold cross validation in order to determine the best value for K. This will be repeated 10 times. We will be expanding the values for K to go from 1 to 20.** 
+```{r}
+knn_cv <- trainControl(method = "repeatedcv", number = 10, repeats = 10)
+
+knn_mod <- caret::train(Drug ~ . , data = drug_train, method = "knn", trControl = knn_cv, tuneGrid = expand.grid(k = 1:20))
+
+knn_mod
+```
+
+**Creating predictions and assessing the out-of-sample accuracy of the KNN model.**
+```{r}
+model_knn <-knn(train = drug_train[-6], test = drug_test[-6], cl = drug_train$Drug, k = 1)
+confusionMatrix(drug_test$Drug, model_knn)
+```
+
+* As, we can see that the overall accuracy of the model is 90%. This means that 10% of the observations were misclassified. This is very good for a relatively simple algorithm.
+
+* The sensitivity for drugA, drugX, and drugY is 100%, meaning that if the observation is in one of those drug groups, the probability that the model will detect this is 100%. For drugB, the sensitivity is 67%, so if the observation is in drugB, there is a 67% chance that the model will detect this. For drugC, the sensitivity is 40%, so if the observation is in group drugB, there is a 40% chance that the model will detect this. 
+
+* The specificity for drugA, drugB, drugC, and drugX is 100%, meaning that if the observation is not in one of these drug groups, there is a 100% chance that the model will not detect this. For drugY, the specificity is 82%, so if the observation is not in group drugY, there is an 82% chance that the model will detect this. 
+
+* The positive predictive value (PPV) for drugA, drugB, drugC, and drugX is 100%, so if the observation is predicted to be in one of these groups, there is a 100% chance that they will actually be in one of these drug groups. The PPV for drugY is 82%, so so if the observation is predicted to be in this group, there is an 82% that they will actually be in this group. 
+
+* The negative predictive value (NPV) for drugA, drugX, and drugY is 100%, so if the observation is not predicted to be in one of these drug groups, there is a 100% chance that they will actually not be in one of these drug groups. The NPV for drugB is 97%, so if the observation is not predicted to be in group drugB, there is a 97% chance that they will actually not be in this drug group. The NPV for drugC is 92%, so if the observation is not predicted to be in group drugB, there is a 92% chance that they will actually not be in this drug group.
+
+**Visualizing our predictions made from the KNN model.**
+```{r}
+#creating a new data frame for plotting
+plot_knn <- data.frame(drug_test[, 1:5], Drug = model_knn)
+plot_knn2 <- data.frame(x = plot_knn$Na_to_K, 
+                        y = plot_knn$Age, 
+                        Drug = plot_knn$Drug)
+
+#finding the hulls for the polygons that will go over the points 
+find_hull <- function(df) df[chull(df$x, df$y), ]
+hulls <- ddply(plot_knn2, .variables = "Drug", .fun = find_hull)
+
+#plotting the predicted values of KNN
+ggplot(plot_knn, aes(Na_to_K, Age, color = Drug, fill = Drug)) + 
+  geom_point(size = 2) + 
+  geom_polygon(data = hulls, aes(x,y), alpha = 0.5) +
+  xlab("Sodium/Potassium Ratio") +
+  ggtitle("Predicted Value Class Separation for KNN") +
+  theme_minimal() +
+  coord_flip()
+```
+
+-----
+
+# Implementing a more complex model
+
+For the more complex model, a random forest will be used. 
+
+In the previous section, the data was split into training and testing, so it will not be done here. The classes for the outcome variable, `Drug`, are imbalanced, so I tried doing 2 random forests with stratification and sample size. 
+
+**First, fitting the random forest on the training data.**
+```{r message=FALSE, warning=TRUE}
+#creating a table of the class imbalance
+table(drug_train$Drug)
+
+#obtaining the count from the smallest class
+nmin <- sum(drug_train$Drug == "drugB")
+
+#running the first random forest with stratification and sample size
+rf_train <- randomForest(Drug ~ ., 
+                         data = drug_train, 
+                         strata = drug_train$Drug, 
+                         sampsize = rep(nmin, 5))
+
+#setting the training specifications 
+ctrl <- trainControl(method = "cv",
+                     classProbs = TRUE,
+                     summaryFunction = multiClassSummary)
+
+#running the second random forest with stratification and sample size
+rfDownsampled <- train(Drug ~ ., data = drug_train,
+                       method = "rf",
+                       ntree = 1500,
+                       tuneLength = 5,                     
+                       trControl = ctrl,
+                       strata = drug_train$Drug,
+                       sampsize = rep(nmin, 5))
+```
+
+**Fitting the random forest on the testing data and assessing the accuracy of the method for the first random forest with stratification and sampling.** 
+```{r}
+pred_rf1 <- predict(rf_train, newdata = drug_test)
+confusionMatrix(drug_test$Drug, pred_rf1)
+```
+
+**Fitting the random forest on the testing data and assessing the accuracy of the method for the second random forest with stratification and sampling.** 
+```{r}
+pred_rf2 <- predict(rfDownsampled, newdata = drug_test)
+confusionMatrix(drug_test$Drug, pred_rf2)
+```
+
+Looks like both have the exactly same result with 100% accuracy. So, for both models, the conclusions are: 
+
+* The accuracy of our random forest model is 100%, meaning that all of the observations were correctly classified and there were no misclassifications. 
+
+* The sensitivity for all drug groups is 100%, meaning that if the observation is in one of those drug groups, the probability that the model will detect this is 100%.
+
+* The specificity for all drug groups is 100%, meaning that if the observation is not in one of these drug groups, there is a 100% chance that the model will not detect this.
+
+* The PPV for all drug groups is 100%, so if the observation is predicted to be in one of these groups, there is a 100% chance that they will actually be in one of these drug groups.
+
+* The NPV for all drug groups is 100%, so if the observation is not predicted to be in one of these drug groups, there is a 100% chance that they will actually not be in one of these drug groups.
+
+**Plotting a decision tree for this classification method, which will serve as a sample tree from our random forest.**
+```{r}
+rf_sample_tree <- rpart(formula = Drug ~ ., data = drug_train)
+rpart.plot(rf_sample_tree)
+```
+
+**Now, variable importance will be assessed.**
+```{r}
+#getting the importance of each variable
+var_imp <- importance(rf_train)
+
+#plotting the importance of each variable 
+data.frame(
+  Predictors = rownames(var_imp),
+  Mean_Dec_Gini = c(var_imp)
+) %>%
+  ggplot(aes(x = fct_reorder(Predictors, Mean_Dec_Gini), y = Mean_Dec_Gini)) +
+  geom_bar(aes(fill = Predictors), stat = "identity", color = "black") +
+  ggtitle("Predictor Importance") +
+  xlab("Predictor Name") +
+  ylab("Mean Decrease in Gini Index") +
+  theme_minimal()
+```
+
+According to the plot above, the most important predictors are, in order:
+
+* `Blood Pressure`
+* `Sodium/Potassium Ratio`
+* `Age`
+* `Cholesterol` 
+* `Sex` 
+
+We can see that `Sex` is not really an important variable, so what if we remove it to see what happens to accuracy when taking the class balance into consideration.
+
+**Fitting a random forest without `Sex` as a predictor.**
+```{r}
+rf_train2 <- randomForest(Drug ~ BP + Na_to_K + Age + Cholesterol, 
+                         data = drug_train, 
+                         strata = drug_train$Drug, 
+                         sampsize = rep(nmin, 5))
+```
+
+**Assessing the accuracy of the random forest without `Sex` as a predictor.**
+```{r}
+pred_rf3 <- predict(rf_train2, newdata = drug_test)
+
+confusionMatrix(drug_test$Drug, pred_rf3)
+```
+
+The results are exactly the same as the previous model, with an accuracy of 100%. However, `Choleterol` is also a predictor without much importance, so lets also remove that variable to see what happens.
+
+**Fitting a random forest without `Sex` and `Cholesterol` as predictors.**
+```{r}
+rf_train3 <- randomForest(Drug ~ BP + Na_to_K + Age, 
+                         data = drug_train, 
+                         strata = drug_train$Drug, 
+                         sampsize = rep(nmin, 5))
+```
+
+**Assessing the accuracy of the random forest without `Sex` and `Cholesterol` as predictors.**
+```{r}
+pred_rf4 <- predict(rf_train3, newdata = drug_test)
+
+confusionMatrix(drug_test$Drug, pred_rf4)
+```
+
+Now, the accuracy drops to 92.5%, which is a 7.5% decrease in accuracy. I am not sure if dropping features based off of importance is a good decision because of information loss, but it may prevent overfitting. I tried with stratified sampling for the random forest, but the results were exactly the same. I tried the SMOTE algorithm for class imbalance, but it did not alleviate the issue and resulted in a dataset that still had class imbalance. I believe I exhausted all of my options, so will leave it like this.
+
+----- 
+
+# Short Conclusion
+
+This was a classification problem where the target feature (Drug) had 5 outcomes. The predictors included blood pressure, sodium to potassium ratio, age, sex, and cholesterol. For the simple model, KNN was used. The accuracy of the model was 90%. For the more complex method, a random forest was used. Several methods, including stratified sampling and feature selection, were tried to alleviate the class imbalance problem. All of the models but 1 had an accuracy of 100% on the testing data. The only model that did not was the random forest with the predictors `Sex` and `Cholesterol` removed, and it had an accuracy of 95%. 
+
+-----
+
+# End of document
+
+-----
+
+```{r}
+sessionInfo()
+```
+
