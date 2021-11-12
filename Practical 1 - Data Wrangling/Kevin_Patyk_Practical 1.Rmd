@@ -206,7 +206,7 @@ students_recoded %>%
 
 # Data processing pipelines
 
-**16: Create a data processing pipeline that (a) loads the `apps` dataset, (b) parses the number of installs as 'Downloads' variable using `mutate()` and `parse_number()`, (c) shows only apps with more than 500 000 000 downloads, (d) orders them by rating (best on top), and (e) shows only the relevant columns (you can choose which are relevant, but select at least the Rating and Category variables). Save the result under the name `popular_apps`.
+**16: Create a data processing pipeline that (a) loads the `apps` dataset, (b) parses the number of installs as 'Downloads' variable using `mutate()` and `parse_number()`, (c) shows only apps with more than 500 000 000 downloads, (d) orders them by rating (best on top), and (e) shows only the relevant columns (you can choose which are relevant, but select at least the Rating and Category variables). Save the result under the name `popular_apps`.**
 ```{r warning=FALSE, message=FALSE, results='hide'}
 popular_apps <- read_csv(file = "googleplaystore.csv") %>%
   mutate(Downloads = parse_number(Installs)) %>%
