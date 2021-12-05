@@ -182,8 +182,9 @@ pre code {
 <div id="installing-the-required-packages." class="section level3">
 <h3>Installing the required packages.</h3>
 <pre class="r"><code>library(ISLR)
-library(tidyverse)
-library(DT)</code></pre>
+library(tidyverse)</code></pre>
+<pre><code>## Warning: package &#39;tibble&#39; was built under R version 4.1.2</code></pre>
+<pre class="r"><code>library(DT)</code></pre>
 <hr />
 </div>
 <div id="plots-can-be-made-in-r-without-the-use-of-ggplot." class="section level1">
@@ -193,8 +194,8 @@ library(DT)</code></pre>
 <h3>First, examine the first 6 observations of the Hitters dataset.</h3>
 <pre class="r"><code>head(Hitters) %&gt;%
   datatable(options = list(scrollX = TRUE))</code></pre>
-<div id="htmlwidget-62989a871d075995fd5b" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-62989a871d075995fd5b">{"x":{"filter":"none","vertical":false,"data":[["-Andy Allanson","-Alan Ashby","-Alvin Davis","-Andre Dawson","-Andres Galarraga","-Alfredo Griffin"],[293,315,479,496,321,594],[66,81,130,141,87,169],[1,7,18,20,10,4],[30,24,66,65,39,74],[29,38,72,78,42,51],[14,39,76,37,30,35],[1,14,3,11,2,11],[293,3449,1624,5628,396,4408],[66,835,457,1575,101,1133],[1,69,63,225,12,19],[30,321,224,828,48,501],[29,414,266,838,46,336],[14,375,263,354,33,194],["A","N","A","N","N","A"],["E","W","W","E","E","W"],[446,632,880,200,805,282],[33,43,82,11,40,421],[20,10,14,3,4,25],[null,475,480,500,91.5,750],["A","N","A","N","N","A"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>AtBat<\/th>\n      <th>Hits<\/th>\n      <th>HmRun<\/th>\n      <th>Runs<\/th>\n      <th>RBI<\/th>\n      <th>Walks<\/th>\n      <th>Years<\/th>\n      <th>CAtBat<\/th>\n      <th>CHits<\/th>\n      <th>CHmRun<\/th>\n      <th>CRuns<\/th>\n      <th>CRBI<\/th>\n      <th>CWalks<\/th>\n      <th>League<\/th>\n      <th>Division<\/th>\n      <th>PutOuts<\/th>\n      <th>Assists<\/th>\n      <th>Errors<\/th>\n      <th>Salary<\/th>\n      <th>NewLeague<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"scrollX":true,"columnDefs":[{"className":"dt-right","targets":[1,2,3,4,5,6,7,8,9,10,11,12,13,16,17,18,19]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-e5177b3f0812abffe5aa" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-e5177b3f0812abffe5aa">{"x":{"filter":"none","vertical":false,"data":[["-Andy Allanson","-Alan Ashby","-Alvin Davis","-Andre Dawson","-Andres Galarraga","-Alfredo Griffin"],[293,315,479,496,321,594],[66,81,130,141,87,169],[1,7,18,20,10,4],[30,24,66,65,39,74],[29,38,72,78,42,51],[14,39,76,37,30,35],[1,14,3,11,2,11],[293,3449,1624,5628,396,4408],[66,835,457,1575,101,1133],[1,69,63,225,12,19],[30,321,224,828,48,501],[29,414,266,838,46,336],[14,375,263,354,33,194],["A","N","A","N","N","A"],["E","W","W","E","E","W"],[446,632,880,200,805,282],[33,43,82,11,40,421],[20,10,14,3,4,25],[null,475,480,500,91.5,750],["A","N","A","N","N","A"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>AtBat<\/th>\n      <th>Hits<\/th>\n      <th>HmRun<\/th>\n      <th>Runs<\/th>\n      <th>RBI<\/th>\n      <th>Walks<\/th>\n      <th>Years<\/th>\n      <th>CAtBat<\/th>\n      <th>CHits<\/th>\n      <th>CHmRun<\/th>\n      <th>CRuns<\/th>\n      <th>CRBI<\/th>\n      <th>CWalks<\/th>\n      <th>League<\/th>\n      <th>Division<\/th>\n      <th>PutOuts<\/th>\n      <th>Assists<\/th>\n      <th>Errors<\/th>\n      <th>Salary<\/th>\n      <th>NewLeague<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"scrollX":true,"columnDefs":[{"className":"dt-right","targets":[1,2,3,4,5,6,7,8,9,10,11,12,13,16,17,18,19]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
 </div>
 <div id="get-a-histogram-of-the-distribution-of-salary-using-base-r." class="section level3">
 <h3>Get a histogram of the distribution of salary using base R.</h3>
