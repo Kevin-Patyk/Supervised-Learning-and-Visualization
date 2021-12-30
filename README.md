@@ -8,14 +8,14 @@ At the end of this course, students are able to apply and interpret the theories
 
 * Apply data wrangling and preprocessing techniques to tidy data sets.
 * Apply, implement, understand and explain methods and techniques that are associated with statistical 
-learning, including regression, trees, clustering, classification techniques and learning ensembles in R.
+learning, including regression, trees, clustering, classification techniques and learning ensembles in `R`.
 * Evaluate the performance of these techniques with appropriate performance measures.
 * Select appropriate techniques to solve specific data science problems.
 * Motivate and explain the choice for techniques to investigate data problems
-* Implement and understand generic data science tools, such as bootstrapping, cross validation, bagging, boosting and error evaluation in R.
-* Interpret and evaluate the results of analyses and explain these techniques in simple terminology to a broad audience
+* Implement and understand generic data science tools, such as bootstrapping, cross validation, bagging, boosting and error evaluation in `R`.
+* Interpret and evaluate the results of analyses and explain these techniques in simple terminology to a broad audience.
 * Understand and explain the basic principles of data visualization and the grammar of graphics.
-* Construct appropriate visualizations for each data analysis technique in R.
+* Construct appropriate visualizations for each data analysis technique in `R`.
 
 # Course Content: 
 
@@ -25,7 +25,7 @@ During this course, participants will actively learn how to apply the main stati
 
 This course provides a broad introduction to supervised learning and visualization. Topics include:
 
-* Data manipulation and data wrangling with R.
+* Data manipulation and data wrangling with `R`.
 * Data visualization.
 * Exploratory data analysis.
 * Regression and classification.
