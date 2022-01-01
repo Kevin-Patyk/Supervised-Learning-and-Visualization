@@ -2,6 +2,10 @@
 
 This repository is where I store all of my `R` scripts and HTML files from practicals and assignments for this course at Utrecht University. 
 
+# Contents
+
+Each folder contains an `.Rmd` file and a corresponding `R Markdown` HTML file. If there are any images or data associated with the code, they will be in the `Data` and `Images` folders. 
+
 # Course Goals: 
 
 At the end of this course, students are able to apply and interpret the theories, principles, methods and techniques related to contemporary data science, and understand and explain different approaches to data analysis:
